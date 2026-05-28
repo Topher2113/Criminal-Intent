@@ -4,7 +4,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useFocusEffect } from 'expo-router';
 import * as Crypto from 'expo-crypto';
 import { getAllCrimes } from '@/storage/crimes';
-import { useSettings } from '@/context/SettingsContext';
+import { useStoredSettings } from '@/hooks/useStoredSettings';
 import { CrimeListItem } from '@/components/CrimeListItem';
 import { IndexHeaderRight } from '@/components/HeaderButtons';
 import { Crime } from '@/types';
@@ -26,7 +26,7 @@ function sortCrimes(crimes: Crime[], order: 'newest' | 'oldest' | 'title'): Crim
 export default function IndexScreen() {
   const [crimes, setCrimes] = useState<Crime[]>([]);
   const router = useRouter();
-  const { settings } = useSettings();
+  const { settings } = useStoredSettings();
 
   useFocusEffect(
     useCallback(() => {

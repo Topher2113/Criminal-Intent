@@ -30,6 +30,7 @@ export function CrimeListItem({ crime, dateFormat, onPress }: Props) {
   return (
     <Pressable
       style={({ pressed }) => [styles.row, { opacity: pressed ? 0.7 : 1 }]}
+      android_ripple={{ color: 'transparent' }}
       onPress={onPress}
     >
       <View style={styles.info}>

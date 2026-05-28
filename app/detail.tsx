@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Alert,
   Image,
@@ -10,12 +10,15 @@ import {
   View,
 } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
-import { getCrime, saveCrime } from '@/storage/crimes';
-import { useSettings } from '@/context/SettingsContext';
+import { saveCrime } from '@/storage/crimes';
+import { useCrime } from '@/hooks/useCrime';
+import { useImagePicker } from '@/hooks/useImagePicker';
+import { useStoredSettings } from '@/hooks/useStoredSettings';
+import { FormField } from '@/components/FormField';
+import { SolvedToggle } from '@/components/SolvedToggle';
 import { DatePickerModal } from '@/components/DatePickerModal';
-import { SettingsButton } from '@/components/HeaderButtons';
+import { BackButton, SettingsButton } from '@/components/HeaderButtons';
 
 const C = {
   bg: '#0A0E17',
@@ -23,7 +26,6 @@ const C = {
   cardBorder: '#1E2535',
   primary: '#E63946',
   secondary: '#48CAE4',
-  success: '#52B788',
   text: '#F1FAEE',
   muted: '#6B7A8D',
 };
@@ -39,42 +41,12 @@ function formatDate(iso: string, fmt: 'short' | 'long'): string {
 export default function DetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { settings } = useSettings();
+  const { settings } = useStoredSettings();
 
-  const [title, setTitle] = useState('');
-  const [details, setDetails] = useState('');
-  const [date, setDate] = useState(new Date());
-  const [solved, setSolved] = useState(false);
-  const [photoUri, setPhotoUri] = useState<string | undefined>();
+  const { title, setTitle, details, setDetails, date, setDate, solved, setSolved, photoUri: storedPhotoUri } = useCrime(id);
+  const { photoUri, pickPhoto } = useImagePicker(storedPhotoUri);
+
   const [showDatePicker, setShowDatePicker] = useState(false);
-
-  useEffect(() => {
-    if (!id) return;
-    getCrime(id).then((crime) => {
-      if (!crime) return;
-      setTitle(crime.title);
-      setDetails(crime.details);
-      setDate(new Date(crime.date));
-      setSolved(crime.solved);
-      setPhotoUri(crime.photoUri);
-    });
-  }, [id]);
-
-  const handlePickPhoto = async () => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permission required', 'Allow access to your photo library to add a photo.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      setPhotoUri(result.assets[0].uri);
-    }
-  };
 
   const handleSave = async () => {
     await saveCrime({
@@ -90,17 +62,21 @@ export default function DetailScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ headerRight: () => <SettingsButton /> }} />
+      <Stack.Screen options={{
+        headerLeft: () => <BackButton label="Criminal Intent" />,
+        headerRight: () => <SettingsButton />,
+      }} />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.topRow}>
           {photoUri ? (
-            <Pressable onPress={handlePickPhoto}>
+            <Pressable android_ripple={{ color: 'transparent' }} onPress={pickPhoto}>
               <Image source={{ uri: photoUri }} style={styles.photo} />
             </Pressable>
           ) : (
             <Pressable
               style={({ pressed }) => [styles.photoPlaceholder, { opacity: pressed ? 0.7 : 1 }]}
-              onPress={handlePickPhoto}
+              android_ripple={{ color: 'transparent' }}
+              onPress={pickPhoto}
             >
               <Ionicons name="camera-outline" size={28} color={C.muted} />
               <Text style={styles.photoPlaceholderText}>Add Photo</Text>
@@ -108,8 +84,7 @@ export default function DetailScreen() {
           )}
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Title</Text>
+        <FormField label="Title">
           <TextInput
             style={styles.input}
             value={title}
@@ -117,10 +92,9 @@ export default function DetailScreen() {
             placeholder="Crime title"
             placeholderTextColor={C.muted}
           />
-        </View>
+        </FormField>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Details</Text>
+        <FormField label="Details">
           <TextInput
             style={[styles.input, styles.multiline]}
             value={details}
@@ -130,35 +104,24 @@ export default function DetailScreen() {
             multiline
             numberOfLines={4}
           />
-        </View>
+        </FormField>
 
-        <View style={styles.field}>
-          <Text style={styles.label}>Date</Text>
+        <FormField label="Date">
           <Pressable
             style={({ pressed }) => [styles.dateBtn, { opacity: pressed ? 0.7 : 1 }]}
+            android_ripple={{ color: 'transparent' }}
             onPress={() => setShowDatePicker(true)}
           >
             <Ionicons name="calendar-outline" size={18} color={C.secondary} />
             <Text style={styles.dateBtnText}>{formatDate(date.toISOString(), settings.dateFormat)}</Text>
           </Pressable>
-        </View>
+        </FormField>
 
-        <Pressable
-          style={({ pressed }) => [styles.solvedRow, { opacity: pressed ? 0.7 : 1 }]}
-          onPress={() => setSolved((s) => !s)}
-        >
-          <Ionicons
-            name={solved ? 'checkbox' : 'square-outline'}
-            size={24}
-            color={solved ? C.success : C.muted}
-          />
-          <Text style={[styles.solvedText, solved && styles.solvedTextActive]}>
-            Mark as Solved
-          </Text>
-        </Pressable>
+        <SolvedToggle solved={solved} onToggle={() => setSolved((s) => !s)} />
 
         <Pressable
           style={({ pressed }) => [styles.saveBtn, { opacity: pressed ? 0.8 : 1 }]}
+          android_ripple={{ color: 'transparent' }}
           onPress={handleSave}
         >
           <Text style={styles.saveBtnText}>Save</Text>
@@ -207,16 +170,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: C.muted,
   },
-  field: {
-    gap: 8,
-  },
-  label: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: C.muted,
-    textTransform: 'uppercase',
-    letterSpacing: 1.1,
-  },
   input: {
     backgroundColor: C.card,
     borderWidth: 1,
@@ -246,19 +199,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: C.secondary,
     fontWeight: '500',
-  },
-  solvedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  solvedText: {
-    fontSize: 16,
-    color: C.muted,
-    fontWeight: '500',
-  },
-  solvedTextActive: {
-    color: C.success,
   },
   saveBtn: {
     backgroundColor: C.primary,

@@ -1,34 +1,35 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { HeaderBackButton, HeaderButton } from '@react-navigation/elements';
 
-const C = {
-  primary: '#E63946',
-  text: '#F1FAEE',
-};
+const TEXT = '#F1FAEE';
 
 export function SettingsButton() {
   const router = useRouter();
   return (
-    <Pressable
-      style={({ pressed }) => [styles.btn, { opacity: pressed ? 0.6 : 1 }]}
-      onPress={() => router.push('/settings')}
-    >
-      <Ionicons name="settings-outline" size={22} color={C.text} />
-    </Pressable>
+    <HeaderButton pressOpacity={0.5} onPress={() => router.push('/settings')}>
+      <Ionicons name="settings-outline" size={22} color={TEXT} />
+    </HeaderButton>
   );
 }
 
-type AddButtonProps = { onPress: () => void };
-
-export function AddButton({ onPress }: AddButtonProps) {
+export function AddButton({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable
-      style={({ pressed }) => [styles.btn, { opacity: pressed ? 0.6 : 1 }]}
-      onPress={onPress}
-    >
-      <Ionicons name="add" size={26} color={C.text} />
-    </Pressable>
+    <HeaderButton pressOpacity={0.5} onPress={onPress}>
+      <Ionicons name="add" size={26} color={TEXT} />
+    </HeaderButton>
+  );
+}
+
+export function BackButton({ label }: { label?: string }) {
+  const router = useRouter();
+  return (
+    <HeaderBackButton
+      onPress={() => router.back()}
+      label={label}
+      tintColor={TEXT}
+    />
   );
 }
 
@@ -42,13 +43,9 @@ export function IndexHeaderRight({ onAdd }: { onAdd: () => void }) {
 }
 
 const styles = StyleSheet.create({
-  btn: {
-    paddingHorizontal: 4,
-  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginRight: 4,
+    marginRight: -8,
   },
 });
