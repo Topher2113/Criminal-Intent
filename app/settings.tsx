@@ -1,7 +1,10 @@
+import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Pressable } from 'react-native';
 import { Stack } from 'expo-router';
-import { useSettings } from '@/context/SettingsContext';
+import { useFocusEffect } from 'expo-router';
+import { getSettings, saveSettings } from '@/storage/settings';
+import { BackButton } from '@/components/HeaderButtons';
 import { Settings } from '@/types';
 
 const C = {
@@ -9,10 +12,11 @@ const C = {
   card: '#141824',
   cardBorder: '#1E2535',
   primary: '#E63946',
-  secondary: '#48CAE4',
   text: '#F1FAEE',
   muted: '#6B7A8D',
 };
+
+const defaults: Settings = { sortOrder: 'newest', dateFormat: 'short' };
 
 type OptionProps<T extends string> = {
   label: string;
@@ -29,6 +33,7 @@ function Option<T extends string>({ label, value, selected, onSelect }: OptionPr
         selected && styles.optionSelected,
         { opacity: pressed ? 0.7 : 1 },
       ]}
+      android_ripple={{ color: 'transparent' }}
       onPress={() => onSelect(value)}
     >
       <Text style={[styles.optionText, selected && styles.optionTextSelected]}>{label}</Text>
@@ -37,11 +42,22 @@ function Option<T extends string>({ label, value, selected, onSelect }: OptionPr
 }
 
 export default function SettingsScreen() {
-  const { settings, updateSettings } = useSettings();
+  const [settings, setSettings] = useState<Settings>(defaults);
+
+  useFocusEffect(
+    useCallback(() => {
+      getSettings().then(setSettings);
+    }, [])
+  );
+
+  const update = async (partial: Partial<Settings>) => {
+    await saveSettings(partial);
+    setSettings((prev) => ({ ...prev, ...partial }));
+  };
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Settings', headerRight: undefined }} />
+      <Stack.Screen options={{ title: 'Settings', headerLeft: () => <BackButton />, headerRight: undefined }} />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sort Order</Text>
@@ -50,19 +66,19 @@ export default function SettingsScreen() {
               label="Newest"
               value="newest"
               selected={settings.sortOrder === 'newest'}
-              onSelect={(v) => updateSettings({ sortOrder: v })}
+              onSelect={(v) => update({ sortOrder: v })}
             />
             <Option<Settings['sortOrder']>
               label="Oldest"
               value="oldest"
               selected={settings.sortOrder === 'oldest'}
-              onSelect={(v) => updateSettings({ sortOrder: v })}
+              onSelect={(v) => update({ sortOrder: v })}
             />
             <Option<Settings['sortOrder']>
               label="A – Z"
               value="title"
               selected={settings.sortOrder === 'title'}
-              onSelect={(v) => updateSettings({ sortOrder: v })}
+              onSelect={(v) => update({ sortOrder: v })}
             />
           </View>
         </View>
@@ -74,13 +90,13 @@ export default function SettingsScreen() {
               label="Short"
               value="short"
               selected={settings.dateFormat === 'short'}
-              onSelect={(v) => updateSettings({ dateFormat: v })}
+              onSelect={(v) => update({ dateFormat: v })}
             />
             <Option<Settings['dateFormat']>
               label="Long"
               value="long"
               selected={settings.dateFormat === 'long'}
-              onSelect={(v) => updateSettings({ dateFormat: v })}
+              onSelect={(v) => update({ dateFormat: v })}
             />
           </View>
         </View>
