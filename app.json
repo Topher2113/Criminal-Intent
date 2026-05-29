@@ -4,6 +4,7 @@
     "slug": "criminal-intent",
     "version": "1.0.0",
     "orientation": "portrait",
+    "backgroundColor": "#0A0E17",
     "icon": "./assets/images/icon.png",
     "scheme": "criminalintent",
     "userInterfaceStyle": "automatic",
