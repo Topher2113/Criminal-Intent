@@ -43,8 +43,8 @@ export default function DetailScreen() {
   const router = useRouter();
   const { settings } = useStoredSettings();
 
-  const { title, setTitle, details, setDetails, date, setDate, solved, setSolved, photoUri: storedPhotoUri } = useCrime(id);
-  const { photoUri, pickPhoto } = useImagePicker(storedPhotoUri);
+  const { title, setTitle, details, setDetails, date, setDate, solved, setSolved, photoUri, setPhotoUri } = useCrime(id);
+  const { pickPhoto } = useImagePicker(setPhotoUri);
 
   const [showDatePicker, setShowDatePicker] = useState(false);
 

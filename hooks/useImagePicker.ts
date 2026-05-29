@@ -1,14 +1,7 @@
-import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
-export function useImagePicker(initial?: string) {
-  const [photoUri, setPhotoUri] = useState<string | undefined>(initial);
-
-  useEffect(() => {
-    setPhotoUri(initial);
-  }, [initial]);
-
+export function useImagePicker(setPhotoUri: (uri: string) => void) {
   const pickPhoto = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -25,5 +18,5 @@ export function useImagePicker(initial?: string) {
     }
   };
 
-  return { photoUri, pickPhoto };
+  return { pickPhoto };
 }
